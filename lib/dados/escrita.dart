@@ -1,0 +1,187 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Escreve no servidor o que o operador faz.
+///
+/// **Tudo passa por `punho_operacoes`.** É o único canal que o telemóvel do
+/// gestor escuta: uma escrita directa numa tabela de leitura não chegava lá, e
+/// ele nunca via a máquina sair. O servidor projecta para as tabelas por
+/// gatilho, na mesma transacção, e o operador volta a lê-las já actualizadas.
+///
+/// O que o servidor deixa passar não é decidido aqui. `punho_operacoes` tem uma
+/// política por perfil: um colaborador cria clientes mas não os arquiva, muda o
+/// estado de uma máquina mas não a tira de circulação, e não toca em despesas,
+/// veículos nem colaboradores. Esconder um botão é cortesia; a barreira é lá.
+///
+/// ## A fila
+///
+/// A regra é que no telemóvel só fica informação temporária quando não há
+/// ligação — e é isso e nada mais que esta fila é. Guarda **o que ainda não
+/// subiu**, e cada operação sai dela no instante em que o servidor a aceita.
+/// Nunca guarda o estado da empresa.
+/// Por onde as alterações saem. Ver [FonteDeDados] para a razão de existir.
+abstract interface class Canal {
+  Future<bool> guardar(
+    String entidade,
+    String idLocal,
+    Map<String, Object?> payload,
+  );
+  Future<int> escoarFila();
+  int get porEnviar;
+}
+
+class Escrita implements Canal {
+  /// As preferências entram posicionais porque um parâmetro nomeado não pode
+  /// começar por underscore, e o campo é privado.
+  Escrita(this._cliente, this._preferencias, {required this.empresaId});
+
+  final SupabaseClient _cliente;
+  final String empresaId;
+  final SharedPreferences _preferencias;
+
+  static const _chaveFila = 'operacoes_por_enviar';
+  static const _chaveAparelho = 'id_deste_aparelho';
+
+  /// Grava uma alteração.
+  ///
+  /// Devolve `true` se o servidor já a tem. `false` quer dizer que ficou em
+  /// fila — não que se perdeu. Quem chama decide o que dizer ao operador, e o
+  /// que lhe deve dizer é "fica guardado, sobe quando houver rede", nunca um
+  /// visto verde que ele leia como feito.
+  @override
+  Future<bool> guardar(
+    String entidade,
+    String idLocal,
+    Map<String, Object?> payload,
+  ) async {
+    final operacao = {
+      'id': _novoUuid(),
+      'empresa_id': empresaId,
+      'entidade': entidade,
+      'entidade_id': idLocal,
+      'payload': payload,
+      'feito_em': DateTime.now().toUtc().toIso8601String(),
+      'por_utilizador': _cliente.auth.currentUser?.id,
+      'por_dispositivo': _aparelho(),
+    };
+
+    try {
+      await _enviar([operacao]);
+      // Aproveita a boleia: se havia coisas encalhadas de quando não havia
+      // rede, este é o momento em que se sabe que a rede voltou.
+      await escoarFila();
+      return true;
+    } catch (_) {
+      await _enfileirar(operacao);
+      return false;
+    }
+  }
+
+  /// Tenta subir o que ficou para trás. Chamado ao abrir cada ecrã.
+  ///
+  /// Uma operação recusada em definitivo pelo servidor — por exemplo, um
+  /// colaborador a tentar arquivar um cliente — **sai da fila**. Se ficasse,
+  /// prendia todas as que vêm atrás dela para sempre, e o operador ficava com
+  /// um contador a subir sem nunca perceber porquê.
+  @override
+  Future<int> escoarFila() async {
+    final fila = _fila();
+    if (fila.isEmpty) return 0;
+
+    var subiram = 0;
+    final ficam = <Map<String, dynamic>>[];
+    for (final operacao in fila) {
+      try {
+        await _enviar([operacao]);
+        subiram++;
+      } on PostgrestException catch (erro) {
+        if (_recusaDefinitiva(erro.code)) continue;
+        ficam.add(operacao);
+      } catch (_) {
+        ficam.add(operacao);
+      }
+    }
+    await _gravarFila(ficam);
+    return subiram;
+  }
+
+  /// Quantas alterações estão à espera de rede.
+  @override
+  int get porEnviar => _fila().length;
+
+  Future<void> _enviar(List<Map<String, dynamic>> linhas) => _cliente
+      .from('punho_operacoes')
+      // `upsert` e não `insert`: se a rede cair depois de o servidor gravar mas
+      // antes de a resposta chegar, a tentativa seguinte não pode duplicar a
+      // operação. O `id` único faz o resto.
+      .upsert(linhas, onConflict: 'id');
+
+  /// Erros em que voltar a tentar nunca vai dar noutra coisa.
+  ///
+  /// `42501` é a política a recusar, `23514` uma validação, `23502`/`22P02`
+  /// dados mal formados. Tudo o resto — rede, tempo esgotado, servidor em baixo
+  /// — é para tentar outra vez.
+  static bool _recusaDefinitiva(String? codigo) =>
+      const {'42501', '23514', '23502', '22P02', '23503'}.contains(codigo);
+
+  List<Map<String, dynamic>> _fila() {
+    final cru = _preferencias.getString(_chaveFila);
+    if (cru == null || cru.isEmpty) return [];
+    try {
+      return [
+        for (final o in jsonDecode(cru) as List)
+          Map<String, dynamic>.from(o as Map),
+      ];
+    } catch (_) {
+      // Fila ilegível é fila que não serve para nada. Apaga-se em vez de
+      // deixar a app a rebentar a cada arranque.
+      _preferencias.remove(_chaveFila);
+      return [];
+    }
+  }
+
+  Future<void> _enfileirar(Map<String, dynamic> operacao) async {
+    final fila = _fila()..add(operacao);
+    await _gravarFila(fila);
+  }
+
+  Future<void> _gravarFila(List<Map<String, dynamic>> fila) async {
+    if (fila.isEmpty) {
+      await _preferencias.remove(_chaveFila);
+      return;
+    }
+    await _preferencias.setString(_chaveFila, jsonEncode(fila));
+  }
+
+  /// Qual aparelho fez isto. Não identifica a empresa nem o operador — serve
+  /// para quem lê o registo saber que duas alterações vieram de sítios
+  /// diferentes.
+  String _aparelho() {
+    final guardado = _preferencias.getString(_chaveAparelho);
+    if (guardado != null) return guardado;
+    final novo = 'operador-${DateTime.now().microsecondsSinceEpoch}';
+    _preferencias.setString(_chaveAparelho, novo);
+    return novo;
+  }
+
+  /// Um uuid v4 sem trazer um pacote só para isto.
+  String _novoUuid() {
+    final agora = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+    final aparelho = _aparelho().hashCode.toUnsigned(32).toRadixString(16);
+    final cauda = identityHashCode(Object()).toUnsigned(32).toRadixString(16);
+    final cru = (agora + aparelho + cauda + '0' * 32).substring(0, 32);
+    return '${cru.substring(0, 8)}-${cru.substring(8, 12)}-4'
+        '${cru.substring(13, 16)}-a${cru.substring(17, 20)}-'
+        '${cru.substring(20, 32)}';
+  }
+}
+
+/// Os ids que a app do gestor gera, para o operador gerar iguais.
+///
+/// Prefixo mais microssegundos, como em `operational_pages.dart`. Dois
+/// aparelhos a criar um cliente no mesmo microssegundo é o que seria preciso
+/// para colidirem.
+String novoIdLocal(String prefixo) =>
+    '$prefixo${DateTime.now().microsecondsSinceEpoch}';
