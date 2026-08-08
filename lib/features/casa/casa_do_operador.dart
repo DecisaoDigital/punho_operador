@@ -90,7 +90,27 @@ class _CasaDoOperadorState extends State<CasaDoOperador> {
             icon: const SimboloPunhoOp(lado: 28),
             tooltip: 'Punho OP — versão',
           ),
-          title: const Text('Punho OP'),
+          // Quem está a usar a app, e onde. Ocupa a mesma linha que o nome da
+          // app ocupava sozinho: num telemóvel em obra não há espaço para uma
+          // barra só a dizer quem somos, e "Punho OP" já está no símbolo ao
+          // lado. Sem isto, um telemóvel partilhado não diz a ninguém com que
+          // conta está aberto — e o trabalho fica registado no nome errado.
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.inscricao.comoSeChama,
+                style: Theme.of(context).textTheme.titleMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                widget.inscricao.empresaNome ?? 'Punho OP',
+                style: Theme.of(context).textTheme.bodySmall,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
           actions: [
             if (estado.porEnviar > 0)
               Padding(

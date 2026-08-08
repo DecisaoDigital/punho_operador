@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../marca/marca.dart';
+import 'registo_screen.dart';
 
 /// Entrar com a conta que o gestor autorizou.
 ///
-/// Não há registo aqui de propósito. Quem cria a empresa é o gestor, no Punho;
-/// o operador recebe acesso, não o pede a si próprio. Uma app de operador que
-/// deixasse criar contas era uma porta para dentro da empresa de outra pessoa.
+/// Há inscrição, e não é contradição com o que aqui estava escrito antes.
+/// Inscrever-se cria um **pedido pendente**, não uma entrada: quem cria a
+/// empresa continua a ser o gestor, no Punho, e o acesso continua a ser
+/// concedido, nunca reclamado. O que muda é que o operador passa a poder
+/// pedir por si — antes dependia de alguém o registar noutra app, e o nome
+/// dele não chegava a lado nenhum.
 class EntradaScreen extends StatefulWidget {
   const EntradaScreen({super.key});
 
@@ -121,6 +125,17 @@ class _EntradaScreenState extends State<EntradaScreen> {
                           )
                         : const Text('Entrar'),
                   ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _aEntrar
+                      ? null
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const RegistoScreen(),
+                          ),
+                        ),
+                  child: const Text('Ainda não tenho conta'),
                 ),
               ],
             ),
