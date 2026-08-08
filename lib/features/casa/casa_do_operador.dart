@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../dados/estado.dart';
 import '../marca/marca.dart';
 import '../sessao/inscricao.dart';
+import '../sessao/o_meu_perfil.dart';
 import 'reservas.dart';
 import 'separadores.dart';
 
@@ -41,10 +42,34 @@ class CasaDoOperador extends StatefulWidget {
 class _CasaDoOperadorState extends State<CasaDoOperador> {
   EstadoDoOperador? _estado;
 
+  /// A inscrição pode mudar sem se sair da app — é o que acontece quando a
+  /// pessoa corrige o nome. Guarda-se aqui uma cópia para a barra de cima
+  /// poder reflectir a correcção sem obrigar a sair e voltar a entrar.
+  late Inscricao _inscricao = widget.inscricao;
+
   @override
   void initState() {
     super.initState();
     _arrancar();
+  }
+
+  Future<void> _editarOsMeusDados() async {
+    final guardou = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => OMeuPerfil(
+          nomeActual: _inscricao.nome,
+          nifActual: _inscricao.nif,
+        ),
+      ),
+    );
+    if (guardou != true || !mounted) return;
+
+    // Relê do servidor em vez de assumir o que se escreveu: o servidor limpa
+    // espaços e recusa o que não passa. O que ficou gravado é o que ele diz
+    // que ficou, não o que o formulário tinha.
+    final actualizada = await lerInscricao();
+    if (!mounted || actualizada == null) return;
+    setState(() => _inscricao = actualizada);
   }
 
   Future<void> _arrancar() async {
@@ -95,21 +120,38 @@ class _CasaDoOperadorState extends State<CasaDoOperador> {
           // barra só a dizer quem somos, e "Punho OP" já está no símbolo ao
           // lado. Sem isto, um telemóvel partilhado não diz a ninguém com que
           // conta está aberto — e o trabalho fica registado no nome errado.
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.inscricao.comoSeChama,
-                style: Theme.of(context).textTheme.titleMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                widget.inscricao.empresaNome ?? 'Punho OP',
-                style: Theme.of(context).textTheme.bodySmall,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          //
+          // Tocar abre "Os meus dados". O lápis está sempre visível, e não só
+          // quando falta o nome: quem tem o nome mal escrito precisa tanto de
+          // o corrigir como quem não tem nenhum, e não descobriria o caminho
+          // se ele aparecesse só a quem já está em falta.
+          title: InkWell(
+            onTap: _editarOsMeusDados,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _inscricao.comoSeChama,
+                        style: Theme.of(context).textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        _inscricao.empresaNome ?? 'Punho OP',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.edit_outlined, size: 16),
+              ],
+            ),
           ),
           actions: [
             if (estado.porEnviar > 0)

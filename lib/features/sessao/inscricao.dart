@@ -16,6 +16,7 @@ class Inscricao {
     required this.perfil,
     this.nome,
     this.empresaNome,
+    this.nif,
   });
 
   final String empresaId;
@@ -31,6 +32,10 @@ class Inscricao {
 
   /// O nome da empresa a que pertence, quando já há adesão activa.
   final String? empresaNome;
+
+  /// O contribuinte da **pessoa** — nunca o da empresa. Só existe depois de
+  /// ela o escrever em "Os meus dados"; é opcional lá e é opcional aqui.
+  final String? nif;
 
   bool get eGestor => perfil == 'gestor';
 
@@ -68,6 +73,7 @@ Future<Inscricao?> lerInscricao() async {
     perfil: (linha['perfil'] as String?) ?? 'colaborador',
     nome: linha['nome'] as String?,
     empresaNome: linha['empresa_nome'] as String?,
+    nif: linha['nif'] as String?,
   );
 }
 
