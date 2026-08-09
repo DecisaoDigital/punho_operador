@@ -6,19 +6,48 @@ import 'package:punho_operador/features/sessao/inscricao.dart';
 
 /// Um servidor que devolve o que se lhe mandar devolver.
 class _ServidorDeMentira implements FonteDeDados {
-  _ServidorDeMentira({this.asMaquinas = const [], this.asReservas = const []});
+  _ServidorDeMentira({
+    this.asMaquinas = const [],
+    this.asReservas = const [],
+    this.asCobrancas = const [],
+    this.osLeads = const [],
+    this.asDespesas = const [],
+  });
   List<Maquina> asMaquinas;
   List<Reserva> asReservas;
+  List<Cobranca> asCobrancas;
+  List<Lead> osLeads;
+  List<Despesa> asDespesas;
+
+  /// Por que ordem lhe perguntaram as coisas. É o que permite provar que a
+  /// projecção foi posta em dia *antes* de alguém ler as reservas — e não
+  /// depois, que era o mesmo que não a pôr.
+  final porQueOrdem = <String>[];
+
+  @override
+  Future<int> porEmDia() async {
+    porQueOrdem.add('porEmDia');
+    return 0;
+  }
 
   @override
   Future<List<Maquina>> maquinas() async => asMaquinas;
   @override
-  Future<List<Reserva>> reservasEntre(DateTime de, DateTime ate) async =>
-      asReservas;
+  Future<List<Reserva>> reservasEntre(DateTime de, DateTime ate) async {
+    porQueOrdem.add('reservas');
+    return asReservas;
+  }
+
   @override
   Future<List<Reserva>> pedidos() async => const [];
   @override
   Future<List<Cliente>> clientes() async => const [];
+  @override
+  Future<List<Cobranca>> cobrancas() async => asCobrancas;
+  @override
+  Future<List<Lead>> leads() async => osLeads;
+  @override
+  Future<List<Despesa>> despesasDeHoje() async => asDespesas;
 }
 
 /// Um canal que aceita tudo e guarda o que passou por ele.
@@ -27,13 +56,13 @@ class _CanalDeMentira implements Canal {
   bool haRede = true;
 
   @override
-  Future<bool> guardar(
+  Future<Resultado> guardar(
     String entidade,
     String idLocal,
     Map<String, Object?> payload,
   ) async {
     escritas.add((entidade, idLocal, payload));
-    return haRede;
+    return haRede ? const Resultado.feito() : const Resultado.emFila();
   }
 
   @override
@@ -86,18 +115,93 @@ Reserva reserva({
   valorPrevistoCentimos: valor,
 );
 
-// ignore: library_private_types_in_public_api
-EstadoDoOperador estadoCom(FonteDeDados servidor, _CanalDeMentira canal) =>
-    EstadoDoOperador(
-      servidor,
-      canal,
-      inscricao: const Inscricao(empresaId: 'e1', perfil: 'colaborador'),
-    );
+/// Uma despesa como o servidor a devolve — com o nome de quem a lançou já
+/// resolvido por ele, que é o ponto: o nome não vem do payload.
+Despesa despesa({
+  required String idLocal,
+  required int centimos,
+  required String quem,
+  String categoria = 'combustivel',
+  String descricao = 'Gasóleo',
+}) => Despesa(
+  id: 'uuid-$idLocal',
+  idLocal: idLocal,
+  cru: {
+    'id': idLocal,
+    'amountCents': centimos,
+    'category': categoria,
+    'description': descricao,
+  },
+  valorCentimos: centimos,
+  categoria: categoria,
+  descricao: descricao,
+  lancadaPor: quem,
+  recebidaEm: DateTime.now(),
+  arquivada: false,
+);
+
+EstadoDoOperador estadoCom(
+  FonteDeDados servidor,
+  // ignore: library_private_types_in_public_api
+  _CanalDeMentira canal, {
+  String? colaboradorId,
+}) => EstadoDoOperador(
+  servidor,
+  canal,
+  inscricao: Inscricao(
+    empresaId: 'e1',
+    perfil: 'colaborador',
+    colaboradorId: colaboradorId,
+  ),
+);
 
 void main() {
   final hoje = DateTime.now();
   DateTime as(int hora, {int dias = 0}) =>
       DateTime(hoje.year, hoje.month, hoje.day + dias, hora);
+
+  group('a projecção é posta em dia antes de se ler', () {
+    // A 8/8/2026 a app do gestor mostrava 20 clientes e esta mostrava 8,
+    // durante 24 horas, sem um erro em lado nenhum: 12 clientes estavam no
+    // registo e nunca chegaram à tabela que esta app lê.
+    //
+    // Clientes e máquinas passaram a vistas sobre o registo e deixaram de
+    // poder ficar para trás. As reservas continuam tabela — precisam de índice
+    // por intervalo de datas — e é aqui que se garante que ninguém lê uma
+    // tabela atrasada: pôr em dia vem *antes*, não depois.
+    test('pôr em dia acontece antes de ler as reservas', () async {
+      final servidor = _ServidorDeMentira();
+      await estadoCom(servidor, _CanalDeMentira()).recarregar();
+
+      expect(servidor.porQueOrdem, contains('porEmDia'));
+      expect(
+        servidor.porQueOrdem.indexOf('porEmDia'),
+        lessThan(servidor.porQueOrdem.indexOf('reservas')),
+        reason: 'pôr em dia depois de ler é o mesmo que não pôr',
+      );
+    });
+
+    test('não conseguir pôr em dia não impede de ler o que já lá está',
+        () async {
+      // O [Servidor] verdadeiro engole a falha desta chamada. Trocar o que já
+      // está projectado por um ecrã de erro era dar menos informação, não mais.
+      final servidor = _ServidorDeMentira(
+        asReservas: [
+          reserva(
+            idLocal: 'sai-hoje',
+            inicio: as(9),
+            fim: as(18, dias: 3),
+            estado: 'confirmed',
+          ),
+        ],
+      );
+      final estado = estadoCom(servidor, _CanalDeMentira());
+      await estado.recarregar();
+
+      expect(estado.erro, isNull);
+      expect(estado.entregasDeHoje, hasLength(1));
+    });
+  });
 
   group('o que ele vê no Hoje', () {
     test('entregar hoje é o que começa hoje e ainda não saiu', () async {
@@ -283,9 +387,14 @@ void main() {
       final estado = estadoCom(servidor, canal);
       await estado.recarregar();
 
-      // É este falso que faz o ecrã dizer "fica guardado, sobe quando houver
-      // rede". Um true aqui mandava-o embora convencido de que estava feito.
-      expect(await estado.entregar(estado.entregasDeHoje.single), isFalse);
+      // É isto que faz o ecrã dizer "fica guardado, sobe quando houver rede".
+      // Um sucesso aqui mandava-o embora convencido de que estava feito.
+      final resultado = await estado.entregar(estado.entregasDeHoje.single);
+      expect(resultado.subiu, isFalse);
+      // Em fila **não é** recusa: sem motivo, a mensagem é a da falta de rede.
+      // Uma recusa do servidor traz o motivo e não fica em fila nenhuma.
+      expect(resultado.recusado, isFalse);
+      expect(resultado.motivo, isNull);
     });
 
     test('um cliente novo nunca vai arquivado', () async {
@@ -345,50 +454,74 @@ void main() {
   });
 
   group('pagamentos', () {
-    test('por cobrar é o que tem valor e já não é um pedido', () async {
+    // Uma cobrança de mentira. Não vem de uma reserva: o servidor é que faz a
+    // conta, e é isso que este bloco testa — que a app usa a conta dele em vez
+    // de a refazer.
+    Cobranca cobranca({
+      required String reserva,
+      required int previsto,
+      int recebido = 0,
+    }) => Cobranca(
+      reservaIdLocal: reserva,
+      cliente: 'Dona Ana',
+      estado: 'rented',
+      inicio: as(9, dias: -1),
+      fim: as(18),
+      previstoCentimos: previsto,
+      recebidoCentimos: recebido,
+      porCobrarCentimos: previsto - recebido,
+    );
+
+    test('por cobrar é o que o servidor diz que falta receber', () async {
       final servidor = _ServidorDeMentira(
-        asReservas: [
-          reserva(
-            idLocal: 'com-valor',
-            inicio: as(9, dias: -1),
-            fim: as(18),
-            estado: 'rented',
-            valor: 12000,
-          ),
-          reserva(
-            idLocal: 'sem-valor',
-            inicio: as(9, dias: -1),
-            fim: as(18),
-            estado: 'rented',
-          ),
-          reserva(
-            idLocal: 'ainda-pedido',
-            inicio: as(9, dias: -1),
-            fim: as(18),
-            estado: 'request',
-            valor: 5000,
-          ),
+        asCobrancas: [
+          cobranca(reserva: 'por-pagar', previsto: 12000),
+          cobranca(reserva: 'meio-pago', previsto: 30000, recebido: 15000),
         ],
       );
       final estado = estadoCom(servidor, _CanalDeMentira());
       await estado.recarregar();
 
-      expect(estado.porCobrar.map((r) => r.idLocal), ['com-valor']);
+      expect(estado.porCobrar.map((c) => c.reservaIdLocal), [
+        'por-pagar',
+        'meio-pago',
+      ]);
+      // O total é o que falta, não o que foi combinado. Somar o previsto dava
+      // 420 € a um cliente que já entregou 150.
+      expect(estado.porCobrarCentimos, 27000);
     });
 
-    test('o recebimento aponta para o cliente e para a reserva', () async {
+    test('meio pago diz-se meio pago', () {
+      final c = cobranca(reserva: 'x', previsto: 30000, recebido: 15000);
+      expect(c.parcial, isTrue);
+      expect(c.porCobrarCentimos, 15000);
+      expect(cobranca(reserva: 'y', previsto: 100).parcial, isFalse);
+    });
+
+    test('o recebimento aponta ao cliente, à reserva e a quem recebeu',
+        () async {
       final canal = _CanalDeMentira();
-      final estado = estadoCom(_ServidorDeMentira(), canal);
+      final estado = estadoCom(
+        _ServidorDeMentira(
+          asReservas: [
+            reserva(
+              idLocal: 'b1',
+              inicio: as(9),
+              fim: as(18),
+              estado: 'rented',
+              valor: 12000,
+            ),
+          ],
+        ),
+        canal,
+        colaboradorId: 'ficha-do-rui',
+      );
+      await estado.recarregar();
 
       await estado.aceitarPagamento(
-        reserva(
-          idLocal: 'b1',
-          inicio: as(9),
-          fim: as(18),
-          estado: 'rented',
-          valor: 12000,
-        ),
+        cobranca(reserva: 'b1', previsto: 12000),
         12000,
+        metodo: 'mbWay',
       );
 
       final escrito = canal.escritas.single;
@@ -396,9 +529,99 @@ void main() {
       expect(escrito.$3['amountCents'], 12000);
       expect(escrito.$3['customerId'], 'c1');
       expect(escrito.$3['bookingId'], 'b1');
-      // O operador é um membro, não um colaborador do negócio. Fazer aqui uma
-      // correspondência entre os dois era inventar um elo.
-      expect(escrito.$3['recordedByCollaboratorId'], isNull);
+      // O método é o que o operador respondeu. Estava fixo em dinheiro, e um
+      // MB Way entrava na caixa como notas — a conta do gestor nunca fechava.
+      expect(escrito.$3['method'], 'mbWay');
+      // Quem recebeu vem da inscrição, que o servidor resolveu da sessão.
+      expect(escrito.$3['recordedByCollaboratorId'], 'ficha-do-rui');
+      // Em UTC, como tudo o que sobe. Sem o `Z` a data só se lia bem por acaso.
+      expect(escrito.$3['date'], endsWith('Z'));
+    });
+
+    test('recebimento parcial escreve só o que entrou', () async {
+      final canal = _CanalDeMentira();
+      final estado = estadoCom(_ServidorDeMentira(), canal);
+
+      await estado.aceitarPagamento(
+        cobranca(reserva: 'b9', previsto: 30000),
+        15000,
+        metodo: 'cash',
+      );
+
+      expect(canal.escritas.single.$3['amountCents'], 15000);
+    });
+  });
+
+  group('despesas', () {
+    test('o gasto sobe sem dizer quem o lançou', () async {
+      final canal = _CanalDeMentira();
+      final estado = estadoCom(_ServidorDeMentira(), canal);
+
+      await estado.lancarDespesa(
+        centimos: 2340,
+        categoria: 'combustivel',
+        descricao: '  Gasóleo da carrinha  ',
+      );
+
+      final escrito = canal.escritas.single;
+      expect(escrito.$1, 'expense');
+      expect(escrito.$3['amountCents'], 2340);
+      expect(escrito.$3['category'], 'combustivel');
+      expect(escrito.$3['description'], 'Gasóleo da carrinha');
+      expect(escrito.$3['date'], endsWith('Z'));
+      // Quem lançou **não vai no payload**: provou-se que um cliente podia
+      // assinar uma operação em nome de outra pessoa. O servidor carimba.
+      expect(escrito.$3.containsKey('lancadaPor'), isFalse);
+      expect(escrito.$3.containsKey('recordedBy'), isFalse);
+    });
+
+    test('o gasto do dia é a soma do que o servidor devolveu', () async {
+      final estado = estadoCom(
+        _ServidorDeMentira(
+          asDespesas: [
+            despesa(idLocal: 'e1', centimos: 6842, quem: 'Mariana Queiroz'),
+            despesa(idLocal: 'e2', centimos: 940, quem: 'Mariana Queiroz'),
+          ],
+        ),
+        _CanalDeMentira(),
+      );
+      await estado.recarregar();
+
+      expect(estado.gastoDeHojeCentimos, 7782);
+      expect(estado.despesasDeHoje.first.lancadaPor, 'Mariana Queiroz');
+    });
+  });
+
+  group('leads', () {
+    Lead lead(String idLocal, {String estado = 'newLead'}) => Lead(
+      id: 'uuid-$idLocal',
+      idLocal: idLocal,
+      cru: {'id': idLocal, 'status': estado},
+      nome: 'Sandra Vaz',
+      telefone: '936112233',
+      origem: 'Site',
+      resumo: 'Quer betoneira',
+      estado: estado,
+      arquivada: false,
+    );
+
+    test('só aparecem os que ainda estão à espera de resposta', () async {
+      final estado = estadoCom(
+        _ServidorDeMentira(
+          osLeads: [
+            lead('novo'),
+            // Já é cliente ou já se perdeu: nos dois casos não é trabalho de
+            // hoje, e continuar a mostrá-lo era mandar telefonar outra vez a
+            // quem já respondeu.
+            lead('convertido', estado: 'converted'),
+            lead('perdido', estado: 'lost'),
+          ],
+        ),
+        _CanalDeMentira(),
+      );
+      await estado.recarregar();
+
+      expect(estado.leadsPorContactar.map((l) => l.idLocal), ['novo']);
     });
   });
 
@@ -414,6 +637,11 @@ void main() {
 }
 
 class _ServidorQueFalha implements FonteDeDados {
+  // Devolve zero em vez de rebentar: o [Servidor] verdadeiro já engole a falha
+  // desta chamada, porque não conseguir actualizar não pode impedir de ler o
+  // que já está projectado.
+  @override
+  Future<int> porEmDia() async => 0;
   @override
   Future<List<Maquina>> maquinas() async => throw Exception('sem rede');
   @override
@@ -423,4 +651,10 @@ class _ServidorQueFalha implements FonteDeDados {
   Future<List<Reserva>> pedidos() async => throw Exception('sem rede');
   @override
   Future<List<Cliente>> clientes() async => throw Exception('sem rede');
+  @override
+  Future<List<Cobranca>> cobrancas() async => throw Exception('sem rede');
+  @override
+  Future<List<Lead>> leads() async => throw Exception('sem rede');
+  @override
+  Future<List<Despesa>> despesasDeHoje() async => throw Exception('sem rede');
 }

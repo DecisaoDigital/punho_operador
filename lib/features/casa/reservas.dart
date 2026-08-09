@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/tema/punho_tema.dart';
+import '../../dados/escrita.dart';
 import '../../dados/estado.dart';
 import '../../dados/servidor.dart';
 import 'separadores.dart';
@@ -120,6 +121,18 @@ class _ReservasScreenState extends State<ReservasScreen> {
         detalhe: 'Sem máquinas não há o que reservar. Quem as regista é o '
             'gestor, no Punho.',
       );
+    }
+
+    // A máquina escolhida pode desaparecer da lista sem esta escolha mudar: o
+    // gestor arquiva-a no Punho enquanto o operador tem meios-dias marcados, e
+    // a actualização seguinte deixa `_maquinaIdLocal` a apontar para nada. O
+    // rodapé lê `_maquina!` e a app rebentava com o ecrã já aberto.
+    //
+    // Limpa-se em vez de se proteger o `!`: uma selecção de uma máquina que já
+    // não está disponível não é para aproveitar, é para refazer.
+    if (_maquinaIdLocal != null && _maquina == null) {
+      _maquinaIdLocal = null;
+      _seleccionados.clear();
     }
 
     final periodo = _periodo;
@@ -251,8 +264,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
       ),
     );
     if (confirmar != true || !mounted) return;
-    final subiu = await widget.estado.confirmarPedido(r);
-    if (mounted) dizerComoCorreu(context, subiu, 'Reserva feita.');
+    final resultado = await widget.estado.confirmarPedido(r);
+    if (mounted) dizerComoCorreu(context, resultado, 'Reserva feita.');
   }
 
   static String _estadoPorExtenso(String estado) => switch (estado) {
@@ -266,9 +279,11 @@ class _ReservasScreenState extends State<ReservasScreen> {
   Future<void> _criar(({DateTime inicio, DateTime fim}) periodo) async {
     final clientes = widget.estado.clientes;
     if (clientes.isEmpty) {
+      // Não é uma escrita que correu bem — é uma que nem se tentou. Dizê-lo
+      // como sucesso funcionava por acaso, porque a mensagem era o aviso.
       dizerComoCorreu(
         context,
-        true,
+        const Resultado.feito(),
         'Cria primeiro o cliente, no separador Clientes.',
       );
       return;
@@ -293,7 +308,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
     );
     if (cliente == null || !mounted) return;
 
-    final subiu = await widget.estado.criarReserva(
+    final resultado = await widget.estado.criarReserva(
       cliente: cliente,
       maquinas: [_maquina!],
       inicio: periodo.inicio,
@@ -301,7 +316,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
     );
     if (!mounted) return;
     setState(_seleccionados.clear);
-    dizerComoCorreu(context, subiu, 'Reserva marcada.');
+    dizerComoCorreu(context, resultado, 'Reserva marcada.');
   }
 }
 

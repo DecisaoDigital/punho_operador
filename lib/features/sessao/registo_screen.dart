@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/identidade/machine_id.dart';
+import '../../core/identidade/nif.dart';
 import '../marca/marca.dart';
 
 /// Inscrever-se na app do operador.
@@ -35,6 +36,8 @@ class _RegistoScreenState extends State<RegistoScreen> {
   final _email = TextEditingController();
   final _palavraPasse = TextEditingController();
   final _empresa = TextEditingController();
+  final _convite = TextEditingController();
+  final _contribuinte = TextEditingController();
   final _formulario = GlobalKey<FormState>();
   bool _aRegistar = false;
   String? _erro;
@@ -46,6 +49,8 @@ class _RegistoScreenState extends State<RegistoScreen> {
     _email.dispose();
     _palavraPasse.dispose();
     _empresa.dispose();
+    _convite.dispose();
+    _contribuinte.dispose();
     super.dispose();
   }
 
@@ -73,6 +78,22 @@ class _RegistoScreenState extends State<RegistoScreen> {
           'empresa': _empresa.text.trim(),
           'perfil': 'colaborador',
           'machine_id': machineId,
+          // **É o código que liga o pedido à empresa.** Sem ele o pedido nasce
+          // com `empresa_id` nulo, e nulo quer dizer "não se sabe de que casa
+          // é" — o gestor não o vê na lista dele e a pessoa fica à espera de
+          // uma autorização que ninguém tem onde dar. Descobriu-se assim, a
+          // fazer o percurso todo no aparelho.
+          if (_convite.text.trim().isNotEmpty)
+            'convite': _convite.text.trim().toUpperCase(),
+          // O contribuinte **da pessoa**, nunca o da empresa.
+          //
+          // Vai aqui e não num ecrã a seguir porque é aqui que a ficha de
+          // empregado nasce: quando o gestor aprova, o servidor cria a ficha
+          // com o que a pessoa declarou. Sem este campo a ficha nascia com o
+          // NIF vazio, e passava a ser mais uma coisa que alguém tinha de
+          // andar a perguntar depois.
+          if (_contribuinte.text.trim().isNotEmpty)
+            'nif': _contribuinte.text.trim(),
         },
       );
 
@@ -159,8 +180,8 @@ class _RegistoScreenState extends State<RegistoScreen> {
         const SimboloPunhoOp(),
         const SizedBox(height: 24),
         const Text(
-          'Inscrever-se não dá acesso. Cria o pedido — quem gere a empresa é '
-          'que o autoriza.',
+          'Use o código que recebeu. É ele que diz a que empresa pertence — '
+          'sem ele ninguém tem onde autorizar o seu acesso.',
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -177,14 +198,36 @@ class _RegistoScreenState extends State<RegistoScreen> {
         ),
         const SizedBox(height: 16),
         TextFormField(
-          controller: _empresa,
-          textCapitalization: TextCapitalization.words,
+          controller: _convite,
+          textCapitalization: TextCapitalization.characters,
+          autocorrect: false,
           decoration: const InputDecoration(
-            labelText: 'Empresa onde trabalha',
+            labelText: 'Código do convite',
+            helperText: 'Veio na mensagem de quem o convidou.',
             border: OutlineInputBorder(),
           ),
-          validator: (v) =>
-              (v == null || v.trim().length < 2) ? 'Falta a empresa.' : null,
+          validator: (v) => (v == null || v.trim().length < 4)
+              ? 'Falta o código do convite.'
+              : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _contribuinte,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Contribuinte',
+            helperText: 'O seu, não o da empresa. Vai para a sua ficha.',
+            border: OutlineInputBorder(),
+          ),
+          // Nove dígitos com dígito de controlo, a mesma conta que o servidor
+          // faz em `punho_nif_valido`. Validar aqui poupa uma ida ao servidor e
+          // apanha o engano enquanto o teclado ainda está aberto — mas quem
+          // manda continua a ser o servidor.
+          validator: (v) {
+            final t = (v ?? '').trim();
+            if (t.isEmpty) return 'Falta o contribuinte.';
+            return nifValido(t) ? null : 'Esse contribuinte não é válido.';
+          },
         ),
         const SizedBox(height: 16),
         TextFormField(

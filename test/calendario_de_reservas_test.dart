@@ -24,6 +24,8 @@ class _Servidor implements FonteDeDados {
   List<Cliente> osClientes;
 
   @override
+  Future<int> porEmDia() async => 0;
+  @override
   Future<List<Maquina>> maquinas() async => asMaquinas;
   @override
   Future<List<Reserva>> reservasEntre(DateTime de, DateTime ate) async =>
@@ -32,19 +34,25 @@ class _Servidor implements FonteDeDados {
   Future<List<Reserva>> pedidos() async => osPedidos;
   @override
   Future<List<Cliente>> clientes() async => osClientes;
+  @override
+  Future<List<Cobranca>> cobrancas() async => const [];
+  @override
+  Future<List<Lead>> leads() async => const [];
+  @override
+  Future<List<Despesa>> despesasDeHoje() async => const [];
 }
 
 class _Canal implements Canal {
   final escritas = <(String, String, Map<String, Object?>)>[];
 
   @override
-  Future<bool> guardar(
+  Future<Resultado> guardar(
     String entidade,
     String idLocal,
     Map<String, Object?> payload,
   ) async {
     escritas.add((entidade, idLocal, payload));
-    return true;
+    return const Resultado.feito();
   }
 
   @override

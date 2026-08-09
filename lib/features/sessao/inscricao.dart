@@ -17,10 +17,23 @@ class Inscricao {
     this.nome,
     this.empresaNome,
     this.nif,
+    this.colaboradorId,
   });
 
   final String empresaId;
   final String perfil;
+
+  /// A ficha de empregado a que esta conta está ligada, em
+  /// `punho_membros.colaborador_id`.
+  ///
+  /// É o que permite a um recibo ou a um gasto dizer **de quem** é. Sem isto o
+  /// operador era uma conta e não uma pessoa: `recordedByCollaboratorId` ia a
+  /// nulo porque a app não tinha por onde saber a que ficha correspondia.
+  ///
+  /// `null` em adesões criadas antes de a aprovação passar a criar a ficha. Não
+  /// se adivinha uma — ligar a conta errada à ficha errada é pior do que
+  /// deixar por atribuir, e a ligação faz-se no Punho, pelo gestor.
+  final String? colaboradorId;
 
   /// O nome que a pessoa declarou ao inscrever-se.
   ///
@@ -74,6 +87,7 @@ Future<Inscricao?> lerInscricao() async {
     nome: linha['nome'] as String?,
     empresaNome: linha['empresa_nome'] as String?,
     nif: linha['nif'] as String?,
+    colaboradorId: linha['colaborador_id'] as String?,
   );
 }
 

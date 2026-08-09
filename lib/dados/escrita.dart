@@ -21,9 +21,41 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// ligação — e é isso e nada mais que esta fila é. Guarda **o que ainda não
 /// subiu**, e cada operação sai dela no instante em que o servidor a aceita.
 /// Nunca guarda o estado da empresa.
+/// Como correu uma escrita.
+///
+/// **Três desfechos e não dois.** Havia só `true`/`false`, e `false` era dito
+/// ao operador como «Sem rede. Fica guardado e sobe assim que houver». Isso é
+/// verdade quando não há rede — e é mentira quando o servidor recusou: aí a
+/// operação foi deitada fora à frente dele, e ele fica à espera de uma subida
+/// que não vai acontecer.
+///
+/// Passou a doer quando o servidor ganhou a guarda contra prometer a mesma
+/// máquina duas vezes: o servidor explicava com quem ela estava, e a app
+/// respondia «sem rede».
+class Resultado {
+  const Resultado._(this.subiu, this.motivo);
+
+  /// O servidor tem-na.
+  const Resultado.feito() : this._(true, null);
+
+  /// Não há rede. Fica em fila e sobe sozinha.
+  const Resultado.emFila() : this._(false, null);
+
+  /// O servidor recusou em definitivo, e disse porquê. Não vai a lado nenhum.
+  const Resultado.recusado(String porque) : this._(false, porque);
+
+  final bool subiu;
+
+  /// A explicação do servidor, quando houve uma. `null` quer dizer que o
+  /// problema foi de ligação — que é coisa que passa.
+  final String? motivo;
+
+  bool get recusado => !subiu && motivo != null;
+}
+
 /// Por onde as alterações saem. Ver [FonteDeDados] para a razão de existir.
 abstract interface class Canal {
-  Future<bool> guardar(
+  Future<Resultado> guardar(
     String entidade,
     String idLocal,
     Map<String, Object?> payload,
@@ -46,12 +78,11 @@ class Escrita implements Canal {
 
   /// Grava uma alteração.
   ///
-  /// Devolve `true` se o servidor já a tem. `false` quer dizer que ficou em
-  /// fila — não que se perdeu. Quem chama decide o que dizer ao operador, e o
-  /// que lhe deve dizer é "fica guardado, sobe quando houver rede", nunca um
-  /// visto verde que ele leia como feito.
+  /// Uma recusa em definitivo **não vai para a fila**: reenviá-la dava a mesma
+  /// resposta para sempre e prendia atrás dela tudo o que viesse depois. Sai
+  /// daqui com o motivo, para quem chama o poder dizer ao operador.
   @override
-  Future<bool> guardar(
+  Future<Resultado> guardar(
     String entidade,
     String idLocal,
     Map<String, Object?> payload,
@@ -72,11 +103,31 @@ class Escrita implements Canal {
       // Aproveita a boleia: se havia coisas encalhadas de quando não havia
       // rede, este é o momento em que se sabe que a rede voltou.
       await escoarFila();
-      return true;
+      return const Resultado.feito();
+    } on PostgrestException catch (erro) {
+      if (_recusaDefinitiva(erro.code)) {
+        return Resultado.recusado(_emPortugues(erro));
+      }
+      await _enfileirar(operacao);
+      return const Resultado.emFila();
     } catch (_) {
       await _enfileirar(operacao);
-      return false;
+      return const Resultado.emFila();
     }
+  }
+
+  /// A mensagem do servidor, quando serve; um genérico, quando não serve.
+  ///
+  /// As mensagens de `23514` e `42501` do Punho são escritas para serem lidas
+  /// por quem está em obra — «A Betoneira 350L já está com o Sr. Costa nessas
+  /// datas» diz-lhe o que fazer a seguir. O que não se mostra é o que o
+  /// Postgres escreve sozinho, que fala de colunas e restrições.
+  static String _emPortugues(PostgrestException erro) {
+    final m = erro.message.trim();
+    if (m.isEmpty || m.contains('violates') || m.contains('constraint')) {
+      return 'O servidor não aceitou. Confirma os dados e tenta outra vez.';
+    }
+    return m;
   }
 
   /// Tenta subir o que ficou para trás. Chamado ao abrir cada ecrã.
@@ -116,7 +167,19 @@ class Escrita implements Canal {
       // `upsert` e não `insert`: se a rede cair depois de o servidor gravar mas
       // antes de a resposta chegar, a tentativa seguinte não pode duplicar a
       // operação. O `id` único faz o resto.
-      .upsert(linhas, onConflict: 'id');
+      //
+      // `ignoreDuplicates` põe o servidor em `on conflict do nothing` em vez de
+      // `do update`, e é a diferença entre um registo e uma tabela qualquer:
+      //
+      // 1. Uma operação é um facto já acontecido. Reenviar não é corrigir — é
+      //    repetir. "Já tenho isso, obrigado" é a resposta certa.
+      // 2. `do update` disparava um UPDATE, e o gatilho de projecção é
+      //    `after insert`. Um reenvio passava sem projectar nada: a operação
+      //    ficava no registo e a reserva nunca chegava à tabela.
+      // 3. Só assim se pode revogar o privilégio de UPDATE no registo — o
+      //    Postgres exige-o em tempo de planeamento com `do update`, mesmo
+      //    quando não há conflito nenhum.
+      .upsert(linhas, onConflict: 'id', ignoreDuplicates: true);
 
   /// Erros em que voltar a tentar nunca vai dar noutra coisa.
   ///

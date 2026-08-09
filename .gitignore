@@ -49,3 +49,7 @@ app.*.map.json
 android/key.properties
 *.jks
 /dist/
+
+# O CLI do Supabase deixa aqui o projecto ligado. É estado da máquina,
+# não do repositório.
+supabase/.temp/
