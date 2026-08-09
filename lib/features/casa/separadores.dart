@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/format/campos.dart';
 import '../../dados/escrita.dart';
 import '../../dados/estado.dart';
 import '../../dados/servidor.dart';
@@ -487,7 +488,7 @@ Future<Recebimento?> mostrarRecebimento(
                     suffixText: '€',
                   ),
                   validator: (v) {
-                    final c = _centimosDeTexto(v);
+                    final c = centsDeTexto(v ?? '');
                     if (c == null) return 'Escreve um valor.';
                     if (c <= 0) return 'Tem de ser mais do que zero.';
                     if (c > cobranca.porCobrarCentimos) {
@@ -520,7 +521,7 @@ Future<Recebimento?> mostrarRecebimento(
               if (!formulario.currentState!.validate()) return;
               Navigator.of(context).pop(
                 Recebimento(
-                  centimos: _centimosDeTexto(valor.text)!,
+                  centimos: centsDeTexto(valor.text)!,
                   metodo: metodo,
                 ),
               );
@@ -574,7 +575,7 @@ Future<void> _lancarDespesa(
                     suffixText: '€',
                   ),
                   validator: (v) {
-                    final c = _centimosDeTexto(v);
+                    final c = centsDeTexto(v ?? '');
                     if (c == null) return 'Escreve um valor.';
                     return c <= 0 ? 'Tem de ser mais do que zero.' : null;
                   },
@@ -625,28 +626,12 @@ Future<void> _lancarDespesa(
 
   if (lancar != true || !context.mounted) return;
   final resultado = await estado.lancarDespesa(
-    centimos: _centimosDeTexto(valor.text)!,
+    centimos: centsDeTexto(valor.text)!,
     categoria: categoria,
     descricao: descricao.text,
   );
   if (!context.mounted) return;
   dizerComoCorreu(context, resultado, 'Gasto lançado.');
-}
-
-/// Euros escritos por uma pessoa, em cêntimos.
-///
-/// Aceita vírgula e ponto — quem escreve num telemóvel português escreve
-/// «12,50», e o teclado numérico dá as duas. `null` quer dizer que não se
-/// consegue ler, e nesse caso não se adivinha zero: zero é um valor, e um
-/// recibo de zero euros é pior do que um erro no ecrã.
-int? _centimosDeTexto(String? texto) {
-  final limpo = (texto ?? '').trim().replaceAll(' ', '').replaceAll(',', '.');
-  if (limpo.isEmpty) return null;
-  final euros = double.tryParse(limpo);
-  if (euros == null || euros.isNaN || euros.isInfinite) return null;
-  // Arredonda em vez de truncar: `(12.35 * 100).toInt()` dá 1234 em vírgula
-  // flutuante, e um cêntimo a menos por cada recibo é uma caixa que não fecha.
-  return (euros * 100).round();
 }
 
 // =============================================================================
