@@ -10,13 +10,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// hoje entrou por outra via, sem pedido nenhum: para esses não havia sequer um
 /// nome errado, havia nada.
 ///
-/// O contribuinte é o da PESSOA, não o da empresa. São dois números diferentes
-/// e não se misturam: o da empresa vai nas facturas, este vai na ficha de
-/// colaborador. Fica opcional de propósito — um ecrã que recusa gravar o nome
-/// porque falta o contribuinte é um ecrã que ninguém preenche. Mas se for
-/// escrito, tem de estar certo: o servidor confere o dígito de controlo e
-/// recusa uma gralha em vez de a guardar para dar erro num documento, meses
-/// depois.
+/// O contribuinte é o da pessoa, e serve a ficha de empregado — onde vive o
+/// custo para a empresa e o que ela lhe desconta. Fica opcional de propósito:
+/// um ecrã que recusa gravar o nome porque falta o contribuinte é um ecrã que
+/// ninguém preenche. Mas se for escrito, tem de estar certo — o servidor
+/// confere o dígito de controlo e recusa uma gralha em vez de a guardar para
+/// dar erro num documento, meses depois.
+///
+/// **O que se escreve aqui é uma declaração, não um registo.** Fica ligado ao
+/// pedido de acesso; só entra na ficha de empregado quando o gestor aprova.
+/// Quem paga os salários é que decide o que é oficial.
 class OMeuPerfil extends StatefulWidget {
   const OMeuPerfil({super.key, this.nomeActual, this.nifActual});
 
@@ -121,7 +124,6 @@ class _OMeuPerfilState extends State<OMeuPerfil> {
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Contribuinte (opcional)',
-                  helperText: 'O seu, não o da empresa.',
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) {

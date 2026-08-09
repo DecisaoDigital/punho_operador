@@ -83,14 +83,12 @@ void main() {
     expect(find.text('501442600'), findsOneWidget);
   });
 
-  testWidgets('diz que o contribuinte é o da pessoa, não o da empresa', (
-    tester,
-  ) async {
-    // São dois números diferentes e a confusão é fácil de fazer. Se alguém
-    // puser aqui o NIF da empresa, fica um funcionário com o contribuinte da
-    // entidade patronal na ficha — e nada denuncia o engano.
+  testWidgets('não explica ao utilizador o que ele já sabe', (tester) async {
+    // Esteve aqui um aviso a dizer que o contribuinte era o da pessoa e não o
+    // da empresa. Saiu: ninguém preenche o nome de uma coisa com o número de
+    // outra, e um campo que se explica de mais trata quem o lê como distraído.
     await _montar(tester);
 
-    expect(find.text('O seu, não o da empresa.'), findsOneWidget);
+    expect(find.textContaining('da empresa'), findsNothing);
   });
 }
