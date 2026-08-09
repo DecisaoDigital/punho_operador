@@ -287,14 +287,28 @@ class _Rubrica extends StatelessWidget {
 /// «Cobrar tem de informar de quem» — o nome do cliente é o título, não uma
 /// legenda: é a primeira coisa que o operador precisa de ler para saber a quem
 /// vai pedir dinheiro.
-class _CartaoDeCobranca extends StatelessWidget {
+class _CartaoDeCobranca extends StatefulWidget {
   const _CartaoDeCobranca({required this.cobranca, required this.estado});
   final Cobranca cobranca;
   final EstadoDoOperador estado;
 
   @override
+  State<_CartaoDeCobranca> createState() => _CartaoDeCobrancaState();
+}
+
+class _CartaoDeCobrancaState extends State<_CartaoDeCobranca> {
+  // Enquanto o pagamento sobe — e sobe com um `recarregar()` inteiro atrás, que
+  // são segundos numa rede de obra — o botão fica desligado. Sem isto, o cartão
+  // continua a dizer «Receber 300 €» com o botão activo, o operador toca outra
+  // vez, o diálogo pré-preenche outra vez os 300 €, e uma cobrança de 300 fica
+  // com dois recibos de 300. É o mesmo duplo pagamento que já se fechara pela
+  // porta do estado; esta é a porta do tempo.
+  bool _aAgir = false;
+
+  @override
   Widget build(BuildContext context) {
     final cores = Theme.of(context).colorScheme;
+    final cobranca = widget.cobranca;
     return Card(
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       child: Padding(
@@ -339,8 +353,14 @@ class _CartaoDeCobranca extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () => _receber(context),
-                child: Text('Receber ${_euros(cobranca.porCobrarCentimos)}'),
+                onPressed: _aAgir ? null : () => _receber(context),
+                child: _aAgir
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text('Receber ${_euros(cobranca.porCobrarCentimos)}'),
               ),
             ),
           ],
@@ -350,13 +370,16 @@ class _CartaoDeCobranca extends StatelessWidget {
   }
 
   Future<void> _receber(BuildContext context) async {
-    final pago = await mostrarRecebimento(context, cobranca);
+    final pago = await mostrarRecebimento(context, widget.cobranca);
     if (pago == null || !context.mounted) return;
-    final resultado = await estado.aceitarPagamento(
-      cobranca,
+    setState(() => _aAgir = true);
+    final resultado = await widget.estado.aceitarPagamento(
+      widget.cobranca,
       pago.centimos,
       metodo: pago.metodo,
     );
+    if (!mounted) return;
+    setState(() => _aAgir = false);
     if (!context.mounted) return;
     dizerComoCorreu(context, resultado, 'Recebido.');
   }

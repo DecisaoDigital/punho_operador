@@ -99,10 +99,13 @@ class Escrita implements Canal {
     };
 
     try {
-      await _enviar([operacao]);
-      // Aproveita a boleia: se havia coisas encalhadas de quando não havia
-      // rede, este é o momento em que se sabe que a rede voltou.
+      // Drena primeiro o que ficou encalhado, e só depois sobe a operação nova.
+      // A projecção toma a maior `seq`. Se a nova subisse primeiro e o atrasado
+      // a seguir, uma versão velha da mesma entidade — uma reserva que ficara em
+      // fila num 503 — sobrepunha-se à nova ao ganhar a `seq` maior. `escoarFila`
+      // engole as suas próprias recusas, portanto não confunde o resultado desta.
       await escoarFila();
+      await _enviar([operacao]);
       return const Resultado.feito();
     } on PostgrestException catch (erro) {
       if (_recusaDefinitiva(erro.code)) {

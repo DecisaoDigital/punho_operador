@@ -258,15 +258,25 @@ class EstadoDoOperador extends ChangeNotifier {
     required String estadoMaquina,
   }) async {
     var resultado = await _guardarReserva(reserva, estadoReserva);
+    // Se o servidor RECUSOU a reserva — uma sobreposição, uma política — não se
+    // toca nas máquinas. Mexer nelas à mesma deixava a reserva num estado e as
+    // máquinas noutro: a betoneira marcada «livre» no calendário do gestor com
+    // o cliente a usá-la, ou marcada «alugada» sem aluguer nenhum atrás. O
+    // operador leria a recusa da reserva sem saber que as máquinas mudaram.
+    if (resultado.recusado) {
+      await recarregar();
+      return resultado;
+    }
     for (final idLocal in reserva.maquinaIdsLocais) {
       final maquina = maquinaPorIdLocal(idLocal);
       // Máquina que não está na lista carregada — arquivada entretanto, ou
-      // cadastrada depois da última leitura. Saltava-se em silêncio e
-      // `tudoSubiu` ficava `true`: a app dizia «Feito.» e aquela máquina
-      // continuava marcada como livre com o cliente a levá-la na carrinha.
-      // Não se consegue actualizar, mas diz-se que não se conseguiu.
+      // cadastrada depois da última leitura. Não se consegue actualizar, e
+      // dizer «fica guardado e sobe» seria mentir: nada foi enviado nem
+      // enfileirado. Recusa-se com uma frase que manda actualizar.
       if (maquina == null) {
-        if (resultado.subiu) resultado = const Resultado.emFila();
+        resultado = const Resultado.recusado(
+          'Uma das máquinas já não está na lista. Actualiza e tenta outra vez.',
+        );
         continue;
       }
       final desta = await _escrita.guardar('machine', maquina.idLocal, {
@@ -441,11 +451,17 @@ class EstadoDoOperador extends ChangeNotifier {
   /// A cobrança traz o nome do cliente (é o que se mostra), mas o recibo tem de
   /// apontar ao cliente pelo id — um nome repetido em dois clientes não é
   /// suficiente para dizer de quem é o dinheiro.
-  String _clienteIdLocalDaReserva(String reservaIdLocal) {
+  ///
+  /// Devolve `null`, não `''`, quando a reserva não está entre as carregadas —
+  /// uma dívida de há mais de 30 dias aparece nas cobranças mas cai fora da
+  /// janela de `_reservas`. Uma string vazia era um cliente a fingir que
+  /// existe: o recibo reconcilia-se pelo `bookingId`, e um dono desconhecido
+  /// diz-se desconhecido em vez de se inventar um vazio.
+  String? _clienteIdLocalDaReserva(String reservaIdLocal) {
     for (final r in [..._reservas, ..._pedidos]) {
       if (r.idLocal == reservaIdLocal) return r.clienteIdLocal;
     }
-    return '';
+    return null;
   }
 
   static DateTime _inicioDeHoje() {
