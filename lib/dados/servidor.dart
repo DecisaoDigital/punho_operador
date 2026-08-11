@@ -106,7 +106,7 @@ class Servidor implements FonteDeDados {
         .eq('empresa_id', empresaId)
         .lt('inicio', ate.toUtc().toIso8601String())
         .gt('fim', de.toUtc().toIso8601String())
-        .order('inicio');
+        .order('inicio', ascending: true);
     return [
       for (final l in linhas as List) Reserva._de(Map<String, dynamic>.from(l)),
     ];
@@ -123,7 +123,7 @@ class Servidor implements FonteDeDados {
         )
         .eq('empresa_id', empresaId)
         .inFilter('estado', ['request', 'proposalSent'])
-        .order('inicio');
+        .order('inicio', ascending: true);
     return [
       for (final l in linhas as List) Reserva._de(Map<String, dynamic>.from(l)),
     ];
@@ -135,7 +135,7 @@ class Servidor implements FonteDeDados {
         .from('punho_clientes')
         .select('id, id_local, nome, telemovel, dados')
         .eq('empresa_id', empresaId)
-        .order('nome');
+        .order('nome', ascending: true);
     return [
       for (final l in linhas as List) Cliente._de(Map<String, dynamic>.from(l)),
     ]..removeWhere((c) => c.arquivado);
@@ -151,7 +151,7 @@ class Servidor implements FonteDeDados {
         )
         .eq('empresa_id', empresaId)
         .gt('por_cobrar_centimos', 0)
-        .order('inicio');
+        .order('inicio', ascending: true);
     return [
       for (final l in linhas as List)
         Cobranca._de(Map<String, dynamic>.from(l)),
