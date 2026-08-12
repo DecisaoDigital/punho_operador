@@ -41,7 +41,16 @@ class _ReservasScreenState extends State<ReservasScreen> {
   /// há alguma coisa — que é a pior espécie de vazio.
   static const _diasAtras = 30;
   static const _diasAFrente = 30;
-  static const _alturaDaLinha = 58.0;
+  /// 59 e não 58, por causa de um dp.
+  ///
+  /// Com 58, a célula de meio-dia media 47 — a linha gasta 5 de folga em cima,
+  /// 5 em baixo e **1 no risco que a separa da linha seguinte**, e o risco
+  /// contava. Falhava o mínimo de 48 por um dp, que é a distância a que nenhum
+  /// olho chega e só uma régua apanha (`test/alvos_de_toque_test.dart`).
+  ///
+  /// É a peça que este operador carrega mais vezes por dia, de pé, numa obra e
+  /// possivelmente com luva.
+  static const _alturaDaLinha = 59.0;
 
   String? _maquinaIdLocal;
   final _seleccionados = <DateTime>{};
@@ -335,7 +344,10 @@ class _EscolhaDeMaquina extends StatelessWidget {
     height: 56,
     child: ListView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // 4 e não 8 em cima e em baixo: com 8, o chip da máquina ficava com 40 dp
+      // dentro de uma barra de 56, e 40 não chega. A barra não cresce — o que
+      // se tira é folga que ninguém via.
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       children: [
         for (final m in maquinas)
           Padding(
