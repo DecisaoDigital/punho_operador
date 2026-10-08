@@ -118,7 +118,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byType(FilledButton).first);
 
-    // A sessão primeiro, e só depois o ecrã. Esperar por "Punho OP" não servia:
+    // A sessão primeiro, e só depois o ecrã. Esperar por "Fist OP" não servia:
     // é também o título do ecrã de entrada, e a espera dava-se por satisfeita
     // sem ninguém ter entrado.
     await ateQue(
@@ -213,7 +213,7 @@ void main() {
     expect(noServidor, 1);
 
     // O nome chegar não prova que o resto chegou. O contribuinte e a morada
-    // viajam dentro do `dados`, com os nomes do Punho do gestor — e se
+    // viajam dentro do `dados`, com os nomes do Fist do gestor — e se
     // subissem com outro nome, ninguém dava por nada: o cliente aparecia
     // criado, e os campos abriam vazios do lado dele.
     final ficha = await _dadosDoCliente(cliente, nomeNovo);

@@ -121,7 +121,7 @@ class Escrita implements Canal {
 
   /// A mensagem do servidor, quando serve; um genérico, quando não serve.
   ///
-  /// As mensagens de `23514` e `42501` do Punho são escritas para serem lidas
+  /// As mensagens de `23514` e `42501` do Fist são escritas para serem lidas
   /// por quem está em obra — «A Betoneira 350L já está com o Sr. Costa nessas
   /// datas» diz-lhe o que fazer a seguir. O que não se mostra é o que o
   /// Postgres escreve sozinho, que fala de colunas e restrições.

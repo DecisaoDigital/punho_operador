@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// As cores do Punho, no Punho OP.
+/// As cores do Fist, no Fist OP.
 ///
-/// **Esta app é um apêndice do Punho, não um vizinho.** O operador e o gestor
+/// **Esta app é um apêndice do Fist, não um vizinho.** O operador e o gestor
 /// olham para o mesmo negócio; se as duas apps não se parecerem, quem as usa
 /// tem de aprender duas casas em vez de uma.
 ///
-/// É uma cópia deliberada de `lib/core/theme/punho_theme.dart` do Punho, e não
+/// É uma cópia deliberada de `lib/core/theme/punho_theme.dart` do Fist, e não
 /// um pacote partilhado: são dois projectos Flutter separados, com ritmos de
 /// lançamento diferentes. Se um dia mudarem as cores, mudam-se nos dois — e é
 /// por isso que os valores estão aqui em cima, à vista, e não espalhados.
-abstract final class PunhoTema {
+abstract final class FistTema {
   static const navy = Color(0xFF10283A);
   static const navyDeep = Color(0xFF0A1C2A);
   static const laranja = Color(0xFFF2A23A);
@@ -61,7 +61,7 @@ abstract final class PunhoTema {
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      // O botão flutuante é o «Novo cliente» e o «Nova reserva». No Punho o
+      // O botão flutuante é o «Novo cliente» e o «Nova reserva». No Fist o
       // laranja é a cor de quem age; sem isto ficava no lilás de fábrica do
       // Material 3, que não é de nenhuma das duas apps.
       floatingActionButtonTheme: const FloatingActionButtonThemeData(

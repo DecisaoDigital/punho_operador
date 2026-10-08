@@ -27,7 +27,7 @@ class _Rede {
 void main() {
   setUp(() {
     PackageInfo.setMockInitialValues(
-      appName: 'Punho OP',
+      appName: 'Fist OP',
       packageName: 'pt.decisaodigital.punho_operador',
       version: '0.0.1',
       buildNumber: '1',

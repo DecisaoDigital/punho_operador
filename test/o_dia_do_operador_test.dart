@@ -433,7 +433,7 @@ void main() {
         localidade: 'Braga',
       );
 
-      // `taxId` e `address` são os nomes do modelo do Punho do gestor, que é
+      // `taxId` e `address` são os nomes do modelo do Fist do gestor, que é
       // quem projecta estas linhas. Escritos de outra maneira, o operador
       // preenchia os campos e o gestor abria a ficha vazia — sem erro nenhum
       // pelo meio, que é o que torna isto difícil de apanhar.

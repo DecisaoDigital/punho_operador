@@ -76,7 +76,7 @@ void main() {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(inscricao.comoSeChama),
-                Text(inscricao.empresaNome ?? 'Punho OP'),
+                Text(inscricao.empresaNome ?? 'Fist OP'),
               ],
             ),
           ),

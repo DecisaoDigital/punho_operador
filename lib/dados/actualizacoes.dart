@@ -143,7 +143,7 @@ class ProcuraDeVersoes {
       if (dados is! Map || dados['actualizacao_disponivel'] != true) return null;
       return VersaoPublicada.doJson(Map<String, dynamic>.from(dados));
     } catch (erro) {
-      debugPrint('[PunhoOP/update] procura falhou: ${erro.runtimeType} · $erro');
+      debugPrint('[FistOP/update] procura falhou: ${erro.runtimeType} · $erro');
       return null;
     }
   }
@@ -169,7 +169,7 @@ class InstaladorDeApk {
     try {
       return await _canal.invokeMethod<bool>('podeInstalar') ?? false;
     } on PlatformException catch (e) {
-      debugPrint('[PunhoOP/instalador] podeInstalar falhou: ${e.code}');
+      debugPrint('[FistOP/instalador] podeInstalar falhou: ${e.code}');
       return false;
     } on MissingPluginException {
       // Testes, ou qualquer sítio sem o canal nativo.
@@ -181,7 +181,7 @@ class InstaladorDeApk {
     try {
       await _canal.invokeMethod<void>('pedirPermissao');
     } on PlatformException catch (e) {
-      debugPrint('[PunhoOP/instalador] pedirPermissao falhou: ${e.code}');
+      debugPrint('[FistOP/instalador] pedirPermissao falhou: ${e.code}');
     } on MissingPluginException {
       // Sem canal nativo não há nada a pedir.
     }
@@ -197,7 +197,7 @@ class InstaladorDeApk {
     void Function(double)? aoProgredir,
   }) async {
     if (!versao.podeInstalarSozinha) {
-      debugPrint('[PunhoOP/instalador] versão sem sha256 — não instalo');
+      debugPrint('[FistOP/instalador] versão sem sha256 — não instalo');
       return null;
     }
     File? destino;
@@ -214,7 +214,7 @@ class InstaladorDeApk {
       final pedido = await _http.getUrl(Uri.parse(versao.url));
       final resposta = await pedido.close();
       if (resposta.statusCode != 200) {
-        debugPrint('[PunhoOP/instalador] download deu ${resposta.statusCode}');
+        debugPrint('[FistOP/instalador] download deu ${resposta.statusCode}');
         return null;
       }
 
@@ -230,13 +230,13 @@ class InstaladorDeApk {
       await saida.close();
 
       if (!await _confere(destino, versao.sha256!)) {
-        debugPrint('[PunhoOP/instalador] SHA-256 não bate — ficheiro fora');
+        debugPrint('[FistOP/instalador] SHA-256 não bate — ficheiro fora');
         await destino.delete();
         return null;
       }
       return destino.path;
     } catch (erro) {
-      debugPrint('[PunhoOP/instalador] download falhou: $erro');
+      debugPrint('[FistOP/instalador] download falhou: $erro');
       try {
         if (destino != null && await destino.exists()) await destino.delete();
       } catch (_) {
@@ -254,7 +254,7 @@ class InstaladorDeApk {
         'caminho': caminho,
       });
     } on PlatformException catch (e) {
-      debugPrint('[PunhoOP/instalador] instalar falhou: ${e.code} · ${e.message}');
+      debugPrint('[FistOP/instalador] instalar falhou: ${e.code} · ${e.message}');
       return null;
     } on MissingPluginException {
       return null;
@@ -274,11 +274,11 @@ class InstaladorDeApk {
       final obtido = saida.digest.toString();
       final bate = obtido.toLowerCase() == esperado.trim().toLowerCase();
       if (!bate) {
-        debugPrint('[PunhoOP/instalador] esperado $esperado, obtido $obtido');
+        debugPrint('[FistOP/instalador] esperado $esperado, obtido $obtido');
       }
       return bate;
     } catch (erro) {
-      debugPrint('[PunhoOP/instalador] verificação falhou: $erro');
+      debugPrint('[FistOP/instalador] verificação falhou: $erro');
       return false;
     }
   }
@@ -389,7 +389,7 @@ class Actualizacoes extends ChangeNotifier with WidgetsBindingObserver {
   /// sem lhe perguntar é abusar da confiança. Quem quiser força pelo botão.
   Future<void> descarregar() async {
     if (!await _emWifi()) {
-      debugPrint('[PunhoOP/update] sem Wi-Fi — descarga adiada');
+      debugPrint('[FistOP/update] sem Wi-Fi — descarga adiada');
       return;
     }
     await descarregarAgora();
@@ -459,7 +459,7 @@ class Actualizacoes extends ChangeNotifier with WidgetsBindingObserver {
       final interfaces = await NetworkInterface.list(includeLoopback: false);
       return interfaces.any((i) => i.name.startsWith('wlan'));
     } catch (erro) {
-      debugPrint('[PunhoOP/update] não consegui ver a rede: $erro');
+      debugPrint('[FistOP/update] não consegui ver a rede: $erro');
       return false;
     }
   }
@@ -492,7 +492,7 @@ class Actualizacoes extends ChangeNotifier with WidgetsBindingObserver {
       _versao = guardada.semBloqueio();
       notifyListeners();
     } catch (erro) {
-      debugPrint('[PunhoOP/update] cache ilegível: $erro');
+      debugPrint('[FistOP/update] cache ilegível: $erro');
     }
   }
 
@@ -507,7 +507,7 @@ class Actualizacoes extends ChangeNotifier with WidgetsBindingObserver {
         }),
       );
     } catch (erro) {
-      debugPrint('[PunhoOP/update] não consegui guardar o cache: $erro');
+      debugPrint('[FistOP/update] não consegui guardar o cache: $erro');
     }
   }
 }

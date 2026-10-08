@@ -22,7 +22,7 @@ import '../marca/marca.dart';
 /// por ele.
 ///
 /// O `perfil` não é perguntado: quem se inscreve por aqui é colaborador. Fundar
-/// uma empresa ou ser gestor faz-se no Punho. Mesmo que alguém forje o pedido,
+/// uma empresa ou ser gestor faz-se no Fist. Mesmo que alguém forje o pedido,
 /// o servidor força `colaborador` para tudo o que venha com `app: punho_op`.
 class RegistoScreen extends StatefulWidget {
   const RegistoScreen({super.key});
@@ -177,7 +177,7 @@ class _RegistoScreenState extends State<RegistoScreen> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SimboloPunhoOp(),
+        const SimboloFistOp(),
         const SizedBox(height: 24),
         const Text(
           'Use o código que recebeu. É ele que diz a que empresa pertence — '

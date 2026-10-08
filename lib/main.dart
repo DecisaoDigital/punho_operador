@@ -27,7 +27,7 @@ Future<void> main() async {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       // `publishableKey` e não `anonKey`: é o nome novo da mesma chave, e é o
-      // que o Punho já usa. `anonKey` está a caminho de desaparecer.
+      // que o Fist já usa. `anonKey` está a caminho de desaparecer.
       publishableKey: SupabaseConfig.anonKey,
     );
   }
@@ -61,9 +61,9 @@ class _AppDoOperadorState extends State<AppDoOperador> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Punho OP',
+    title: 'Fist OP',
     debugShowCheckedModeBanner: false,
-    theme: PunhoTema.claro,
+    theme: FistTema.claro,
     // Sem configuração não há app. Mostrar-lhe uma casa vazia era pior do que
     // dizer-lhe o que falta: ele ficava a pensar que a empresa não tem nada.
     home: AvisoDeVersao(
@@ -75,7 +75,7 @@ class _AppDoOperadorState extends State<AppDoOperador> {
 
 /// Quem entra e o que se lhe mostra.
 ///
-/// Ter sessão não chega — como no Punho, quem decide é a inscrição activa em
+/// Ter sessão não chega — como no Fist, quem decide é a inscrição activa em
 /// `punho_membros`. Um utilizador autenticado sem inscrição não é operador de
 /// empresa nenhuma, e não pode ver nada.
 class Porta extends StatelessWidget {

@@ -463,7 +463,7 @@ class Recebimento {
   final String metodo;
 }
 
-/// Os métodos de pagamento que o Punho do gestor conhece.
+/// Os métodos de pagamento que o Fist do gestor conhece.
 ///
 /// **Os mesmos nomes que o modelo dele usa** (`PaymentMethod`). Um nome
 /// inventado aqui era um recibo que o gestor não sabia ler.

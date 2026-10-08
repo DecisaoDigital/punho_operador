@@ -43,8 +43,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // A chave de release do Punho OP. É diferente da do Punho de propósito:
-    // são dois APKs com identidades Android distintas, e o Control e o Punho
+    // A chave de release do Fist OP. É diferente da do Fist de propósito:
+    // são dois APKs com identidades Android distintas, e o Control e o Fist
     // já seguem esta regra de uma chave por app.
     //
     // A chave é permanente. O Android identifica uma app pelo par
@@ -54,7 +54,7 @@ android {
     signingConfigs {
         create("release") {
             check(keystorePropertiesFile.exists()) {
-                "Falta android/key.properties. Um APK release do Punho OP tem " +
+                "Falta android/key.properties. Um APK release do Fist OP tem " +
                     "de ser assinado com a chave de release."
             }
             storeFile = file(keystoreProperties["storeFile"] as String)
@@ -74,7 +74,7 @@ android {
     }
 
     // O ficheiro sai com o nome e a versão em vez de "app-release.apk", como
-    // no Punho: o que se instala por USB diz-se a si próprio.
+    // no Fist: o que se instala por USB diz-se a si próprio.
     @Suppress("DEPRECATION")
     applicationVariants.all {
         val versao = versionName
@@ -82,7 +82,7 @@ android {
             val saida =
                 this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             if (saida.outputFileName.endsWith("-release.apk")) {
-                saida.outputFileName = "PunhoOP_v$versao.apk"
+                saida.outputFileName = "FistOP_v$versao.apk"
             }
         }
     }

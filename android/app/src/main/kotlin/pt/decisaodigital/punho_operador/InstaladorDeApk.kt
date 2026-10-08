@@ -50,7 +50,7 @@ object InstaladorDeApk {
             setAppPackageName(context.packageName)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 // Pedido, não garantia: o sistema instala sem perguntar se
-                // reconhecer o Punho como quem instalou a versão anterior.
+                // reconhecer o Fist como quem instalou a versão anterior.
                 setRequireUserAction(
                     PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED,
                 )
@@ -67,7 +67,7 @@ object InstaladorDeApk {
 
         try {
             instalador.openSession(sessaoId).use { sessao ->
-                // Copiado em blocos: um APK do Punho anda pelos 76 MB e lê-lo
+                // Copiado em blocos: um APK do Fist anda pelos 76 MB e lê-lo
                 // todo para memória de uma vez é pedir um OutOfMemory num
                 // telemóvel com pouca folga.
                 sessao.openWrite("punho-op.apk", 0, ficheiro.length()).use { destino ->

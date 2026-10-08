@@ -10,7 +10,7 @@ const chaveMachineId = 'punho_op_machine_id';
 
 /// Identificador estável deste aparelho.
 ///
-/// É o mesmo esquema do Punho (`lib/core/licenca/machine_id.dart`): o SHA256 de
+/// É o mesmo esquema do Fist (`lib/core/licenca/machine_id.dart`): o SHA256 de
 /// uma semente da plataforma, guardado em cache para não depender de o plugin
 /// responder sempre o mesmo ao longo do tempo. Deliberadamente igual — é o par
 /// (`machine_id`, `app`) que identifica um terminal, e dois esquemas diferentes
@@ -36,11 +36,11 @@ Future<String> resolverMachineId({Future<String> Function()? semente}) async {
 /// Em Android é o ANDROID_ID e tem de ser: é único por (aparelho, chave de
 /// assinatura da app) e sobrevive a uma reinstalação. Não usar o `Build.ID`,
 /// que é o identificador da ROM — dois telemóveis com a mesma versão de MIUI
-/// dariam o mesmo terminal. Esse erro já custou uma correcção no Punho, a 5 de
+/// dariam o mesmo terminal. Esse erro já custou uma correcção no Fist, a 5 de
 /// Agosto de 2026; não vale a pena repeti-lo aqui.
 ///
 /// Como a OP é assinada com a sua própria keystore, o ANDROID_ID que ela vê é
-/// diferente do que o Punho vê no mesmo telemóvel. É o comportamento certo: são
+/// diferente do que o Fist vê no mesmo telemóvel. É o comportamento certo: são
 /// duas instalações distintas, e o `app` ao lado distingue-as na mesma.
 Future<String> sementeDoDispositivo() async {
   if (Platform.isAndroid) {

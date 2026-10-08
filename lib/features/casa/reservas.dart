@@ -8,7 +8,7 @@ import 'separadores.dart';
 
 /// O calendário de reservas, a descer.
 ///
-/// **É o mesmo calendário do Punho, virado.** No Punho os dias são colunas
+/// **É o mesmo calendário do Fist, virado.** No Fist os dias são colunas
 /// lado a lado, porque quem o usa está sentado a um ecrã largo. Aqui os dias
 /// descem: o operador tem o telemóvel de pé numa mão, e sete colunas num ecrã
 /// de telemóvel dão células onde não cabe o nome de um cliente.
@@ -22,7 +22,7 @@ import 'separadores.dart';
 ///   conjunto de bocados soltos;
 /// * a reserva vai do início do primeiro ao fim do último.
 ///
-/// Não há Semana/Mês como no Punho. Numa lista que rola não faz falta: a
+/// Não há Semana/Mês como no Fist. Numa lista que rola não faz falta: a
 /// separação existe lá porque uma grelha horizontal só mostra o que cabe no
 /// ecrã de uma vez, e aqui basta continuar a rolar.
 class ReservasScreen extends StatefulWidget {
@@ -128,12 +128,12 @@ class _ReservasScreenState extends State<ReservasScreen> {
         icone: Icons.precision_manufacturing_outlined,
         titulo: 'Ainda não há máquinas.',
         detalhe: 'Sem máquinas não há o que reservar. Quem as regista é o '
-            'gestor, no Punho.',
+            'gestor, no Fist.',
       );
     }
 
     // A máquina escolhida pode desaparecer da lista sem esta escolha mudar: o
-    // gestor arquiva-a no Punho enquanto o operador tem meios-dias marcados, e
+    // gestor arquiva-a no Fist enquanto o operador tem meios-dias marcados, e
     // a actualização seguinte deixa `_maquinaIdLocal` a apontar para nada. O
     // rodapé lê `_maquina!` e a app rebentava com o ecrã já aberto.
     //
@@ -387,7 +387,7 @@ class _LinhaDoDia extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-        color: hoje ? PunhoTema.laranja.withValues(alpha: 0.10) : null,
+        color: hoje ? FistTema.laranja.withValues(alpha: 0.10) : null,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Row(
@@ -441,8 +441,8 @@ class _Celula extends StatelessWidget {
   Widget build(BuildContext context) {
     final ocupada = ocupante != null;
     final (Color fundo, Color letra) = switch ((ocupada, seleccionada)) {
-      (true, _) => (PunhoTema.ocupada.withValues(alpha: 0.14), PunhoTema.ocupada),
-      (_, true) => (PunhoTema.laranja, PunhoTema.navyDeep),
+      (true, _) => (FistTema.ocupada.withValues(alpha: 0.14), FistTema.ocupada),
+      (_, true) => (FistTema.laranja, FistTema.navyDeep),
       _ => (Colors.white, Theme.of(context).colorScheme.onSurfaceVariant),
     };
     return Padding(
@@ -460,7 +460,7 @@ class _Celula extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: ocupada
-                    ? PunhoTema.ocupada.withValues(alpha: 0.35)
+                    ? FistTema.ocupada.withValues(alpha: 0.35)
                     : Theme.of(context).dividerColor,
               ),
             ),
@@ -516,7 +516,7 @@ class _RodapeDeCriar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: PunhoTema.navy,
+    color: FistTema.navy,
     child: SafeArea(
       top: false,
       child: Padding(

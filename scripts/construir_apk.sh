@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Constrói o APK de release do Punho OP com os `--dart-define` e **confirma**
+# Constrói o APK de release do Fist OP com os `--dart-define` e **confirma**
 # que eles lá ficaram.
 #
 # Porquê: sem os defines a app não estoira nem se queixa — arranca em modo
-# local, com o mesmo aspecto e sem servidor nenhum por trás. No Punho isso
+# local, com o mesmo aspecto e sem servidor nenhum por trás. No Fist isso
 # escondeu builds sem backend durante duas versões, e aqui o risco é o mesmo:
 # o operador cria um cliente, vê-o na lista, e ele nunca chega ao Supabase.
 #
@@ -38,8 +38,8 @@ esac
 # aprova APKs de builds antigas que ninguém pediu, e um ficheiro velho a passar
 # no teste é exactamente a falha que este script existe para apanhar.
 rm -f build/app/outputs/flutter-apk/app*-release.apk \
-      build/app/outputs/flutter-apk/PunhoOP_v*.apk \
-      build/app/outputs/apk/release/PunhoOP_v*.apk
+      build/app/outputs/flutter-apk/FistOP_v*.apk \
+      build/app/outputs/apk/release/FistOP_v*.apk
 
 flutter build apk --release "${destino[@]}" \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \

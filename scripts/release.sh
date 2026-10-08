@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Publicação completa do Punho OP a partir do home lab.
+# Publicação completa do Fist OP a partir do home lab.
 # Uso normal: ./scripts/release.sh 0.0.2 --yes
 #
-# Irmão do scripts/release.sh do Punho, com as diferenças que importam: outro
+# Irmão do scripts/release.sh do Fist, com as diferenças que importam: outro
 # repositório, outra keystore, outro slug no catálogo, e um APK universal só
-# (o Punho usa --split-per-abi; aqui não há razão para três ficheiros).
+# (o Fist usa --split-per-abi; aqui não há razão para três ficheiros).
 
 set -Eeuo pipefail
 
@@ -62,7 +62,7 @@ for command in git gh curl jq perl flutter supabase dpkg; do
 done
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" ||
-  die "execute este comando dentro do repositório Punho OP"
+  die "execute este comando dentro do repositório Fist OP"
 cd "$repo_root"
 
 [[ "$(git branch --show-current)" == "main" ]] ||
@@ -144,7 +144,7 @@ unexpected="$(
   die "os testes alteraram ficheiros inesperados: $unexpected"
 
 # Construir ANTES de empurrar seja o que for: uma tag publicada sem release
-# por trás é o que acontece quando se inverte esta ordem (aconteceu no Punho,
+# por trás é o que acontece quando se inverte esta ordem (aconteceu no Fist,
 # na v0.2.1).
 printf 'A construir o APK universal com os defines...\n'
 "$repo_root/scripts/construir_apk.sh" --universal
@@ -152,7 +152,7 @@ printf 'A construir o APK universal com os defines...\n'
 apk_construido="build/app/outputs/flutter-apk/app-release.apk"
 [[ -f "$apk_construido" ]] || die "o build não produziu $apk_construido"
 
-# O certificado definitivo do Punho OP. Uma keystore diferente instala-se como
+# O certificado definitivo do Fist OP. Uma keystore diferente instala-se como
 # outra app: quem já tivesse a anterior teria de a desinstalar, e o
 # self-update ficava partido para toda a gente.
 readonly CERTIFICADO_SHA256="95d975495c574051f346a5f1e7b6744dfd7796651a904f4550330f9c67b4372d"
@@ -162,7 +162,7 @@ build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
 # uma corrida perdida à espera de acontecer: o grep sai no primeiro acerto, o
 # produtor apanha SIGPIPE a escrever para o cano fechado, e o `pipefail` lá em
 # cima transforma uma verificação bem-sucedida numa falha da release. Foi o
-# que afundou a primeira tentativa da 0.3.3 do Punho.
+# que afundou a primeira tentativa da 0.3.3 do Fist.
 badging="$("$build_tools/aapt2" dump badging "$apk_construido")"
 certificados="$("$build_tools/apksigner" verify --print-certs "$apk_construido")"
 
@@ -171,7 +171,7 @@ grep -Fq "versionCode='${new_build}' versionName='${version}'" <<< "$badging" ||
 grep -Fq "package: name='${PACOTE}'" <<< "$badging" ||
   die "o APK não é ${PACOTE}"
 grep -Fiq "$CERTIFICADO_SHA256" <<< "$certificados" ||
-  die "o APK não está assinado com a keystore definitiva do Punho OP"
+  die "o APK não está assinado com a keystore definitiva do Fist OP"
 
 git add -- pubspec.yaml
 if ! git diff --quiet -- pubspec.lock; then
@@ -181,7 +181,7 @@ git commit -m "chore(release): ${tag}"
 committed=true
 
 git push origin main
-git tag -a "$tag" -m "Punho OP ${version}"
+git tag -a "$tag" -m "Fist OP ${version}"
 git push origin "$tag"
 
 asset="punho-op-android-v${version}.apk"
@@ -189,7 +189,7 @@ mkdir -p dist
 cp "$apk_construido" "dist/${asset}"
 gh release create "$tag" \
   --repo "$REPOSITORY" \
-  --title "Punho OP ${version}" \
+  --title "Fist OP ${version}" \
   --notes "Ver o histórico de commits desde a etiqueta anterior." \
   "dist/${asset}#${asset}"
 

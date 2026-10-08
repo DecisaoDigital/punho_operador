@@ -97,7 +97,7 @@ payload="$(
       build_number: $build,
       url_download: $url,
       obrigatoria: false,
-      notas_lancamento: "Nova versão Android do Punho OP.",
+      notas_lancamento: "Nova versão Android do Fist OP.",
       activa: true,
       sha256: $sha
     }'
@@ -189,7 +189,7 @@ check_update() {
 
 # Quem está atrás recebe; quem já lá está não recebe. O terceiro caso não é
 # hipotético: a edge function normaliza versionCodes acima de 1000 porque o
-# Flutter os prefixa com a arquitectura em builds --split-per-abi. O Punho OP
+# Flutter os prefixa com a arquitectura em builds --split-per-abi. O Fist OP
 # não usa split hoje, mas se algum dia usar, um aparelho com 1001 tem de ser
 # tratado como build 1 e não como um número astronómico que nunca mais
 # actualiza.

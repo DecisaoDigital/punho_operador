@@ -9,7 +9,7 @@ import 'package:punho_operador/features/sessao/inscricao.dart';
 /// **Que altura tem, na realidade, cada coisa em que se carrega — no OP.**
 ///
 /// Achado 6.1/6.6. O OP nunca tinha sido olhado: a auditoria contou os toques
-/// do Punho e do Control e deixou esta app de fora por inteiro.
+/// do Fist e do Control e deixou esta app de fora por inteiro.
 ///
 /// A app tem cinco sítios onde se toca e quatro deles são `IconButton` com
 /// `tooltip` — tamanho e nome resolvidos pelo Material. O que interessa medir é

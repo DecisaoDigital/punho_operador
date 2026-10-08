@@ -467,7 +467,7 @@ class Cliente extends Registo {
 
   final String nome, telemovel;
   final bool arquivado;
-  /// Contribuinte e morada. Guardados com os nomes do Punho do gestor —
+  /// Contribuinte e morada. Guardados com os nomes do Fist do gestor —
   /// `taxId` e `address` —, que é quem projecta estas linhas: um nome trocado
   /// aqui é um campo que o operador escreve e o gestor nunca vê.
   final String? nif, morada;

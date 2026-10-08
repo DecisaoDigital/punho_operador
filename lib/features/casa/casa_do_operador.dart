@@ -112,12 +112,12 @@ class _CasaDoOperadorState extends State<CasaDoOperador> {
           // forma só se via saindo da sessão.
           leading: IconButton(
             onPressed: () => mostrarSobre(context),
-            icon: const SimboloPunhoOp(lado: 28),
-            tooltip: 'Punho OP — versão',
+            icon: const SimboloFistOp(lado: 28),
+            tooltip: 'Fist OP — versão',
           ),
           // Quem está a usar a app, e onde. Ocupa a mesma linha que o nome da
           // app ocupava sozinho: num telemóvel em obra não há espaço para uma
-          // barra só a dizer quem somos, e "Punho OP" já está no símbolo ao
+          // barra só a dizer quem somos, e "Fist OP" já está no símbolo ao
           // lado. Sem isto, um telemóvel partilhado não diz a ninguém com que
           // conta está aberto — e o trabalho fica registado no nome errado.
           //
@@ -141,7 +141,7 @@ class _CasaDoOperadorState extends State<CasaDoOperador> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        _inscricao.empresaNome ?? 'Punho OP',
+                        _inscricao.empresaNome ?? 'Fist OP',
                         style: Theme.of(context).textTheme.bodySmall,
                         overflow: TextOverflow.ellipsis,
                       ),

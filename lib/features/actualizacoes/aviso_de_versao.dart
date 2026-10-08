@@ -99,7 +99,7 @@ class _Cartao extends StatelessWidget {
                 const SizedBox(width: _folgaEntreLinhas),
                 Expanded(
                   child: Text(
-                    'Punho OP ${versao.versao} disponível',
+                    'Fist OP ${versao.versao} disponível',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),

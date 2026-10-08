@@ -8,7 +8,7 @@ import 'registo_screen.dart';
 ///
 /// Há inscrição, e não é contradição com o que aqui estava escrito antes.
 /// Inscrever-se cria um **pedido pendente**, não uma entrada: quem cria a
-/// empresa continua a ser o gestor, no Punho, e o acesso continua a ser
+/// empresa continua a ser o gestor, no Fist, e o acesso continua a ser
 /// concedido, nunca reclamado. O que muda é que o operador passa a poder
 /// pedir por si — antes dependia de alguém o registar noutra app, e o nome
 /// dele não chegava a lado nenhum.
@@ -70,10 +70,10 @@ class _EntradaScreenState extends State<EntradaScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SimboloPunhoOp(),
+                const SimboloFistOp(),
                 const SizedBox(height: 12),
                 Text(
-                  'Punho OP',
+                  'Fist OP',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),

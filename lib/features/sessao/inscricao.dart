@@ -32,7 +32,7 @@ class Inscricao {
   ///
   /// `null` em adesões criadas antes de a aprovação passar a criar a ficha. Não
   /// se adivinha uma — ligar a conta errada à ficha errada é pior do que
-  /// deixar por atribuir, e a ligação faz-se no Punho, pelo gestor.
+  /// deixar por atribuir, e a ligação faz-se no Fist, pelo gestor.
   final String? colaboradorId;
 
   /// O nome que a pessoa declarou ao inscrever-se.

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-/// O símbolo do Punho OP, o mesmo desenho do ícone do lançador.
+/// O símbolo do Fist OP, o mesmo desenho do ícone do lançador.
 ///
 /// A app abria sem o mostrar em lado nenhum: quem a instalava tocava num
 /// símbolo e entrava num ecrã que não se parecia com ele.
-class SimboloPunhoOp extends StatelessWidget {
-  const SimboloPunhoOp({super.key, this.lado = 96});
+class SimboloFistOp extends StatelessWidget {
+  const SimboloFistOp({super.key, this.lado = 96});
   final double lado;
 
   @override
@@ -81,9 +81,9 @@ Future<void> mostrarSobre(BuildContext context) => showDialog<void>(
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SimboloPunhoOp(lado: 72),
+        const SimboloFistOp(lado: 72),
         const SizedBox(height: 12),
-        Text('Punho OP', style: Theme.of(context).textTheme.titleMedium),
+        Text('Fist OP', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
         const VersaoInstalada(),
       ],
