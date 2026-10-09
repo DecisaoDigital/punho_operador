@@ -2,5 +2,5 @@
 <resources>
     <!-- O mesmo azul do Fist: é a mesma casa, e o que distingue as duas apps
          no ecrã do telemóvel é a barra vermelha do OP, não o fundo. -->
-    <color name="ic_launcher_background">#1E2A44</color>
+    <color name="ic_launcher_background">#0D2E44</color>
 </resources>
